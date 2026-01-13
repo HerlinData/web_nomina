@@ -33,24 +33,30 @@
                     <span class="sidebar-text font-medium">Home</span>
                 </a>
             </li>
+            @can('personas.view')
             <li>
                 <a href="{{ route('personas.index') }}" class="nav-link flex items-center gap-3 px-4 py-3 rounded-lg {{ request()->routeIs('personas.*') ? 'bg-primary/10 text-primary font-medium' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1b2431] hover:text-primary' }} transition-colors group" title="Personas">
                     <i class="fa-solid fa-users text-lg flex-shrink-0"></i>
                     <span class="sidebar-text font-medium">Personas</span>
                 </a>
             </li>
+            @endcan
+            @can('contratos.view')
             <li>
                 <a href="{{ route('contratos.index') }}" class="nav-link flex items-center gap-3 px-4 py-3 rounded-lg {{ request()->routeIs('contratos.*') ? 'bg-primary/10 text-primary font-medium' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1b2431] hover:text-primary' }} transition-colors group" title="Contratos">
                     <i class="fa-solid fa-file-contract text-lg flex-shrink-0"></i>
                     <span class="sidebar-text font-medium">Contratos</span>
                 </a>
             </li>
+            @endcan
+            @can('dashboard.view')
             <li>
                 <a href="{{ route('dashboard') }}" class="nav-link flex items-center gap-3 px-4 py-3 rounded-lg {{ request()->routeIs('dashboard') ? 'bg-primary/10 text-primary font-medium' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1b2431] hover:text-primary' }} transition-colors group" title="Dashboard">
                     <i class="fa-solid fa-chart-pie text-lg flex-shrink-0"></i>
                     <span class="sidebar-text font-medium">Dashboard</span>
                 </a>
             </li>
+            @endcan
         </ul>
     </nav>
     

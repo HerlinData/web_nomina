@@ -30,8 +30,10 @@
                        placeholder="Buscar por N° Documento" 
                        class="w-full pl-10 pr-4 py-2 rounded-lg border border-[#ffffff] dark:border-gray-600 bg-white dark:bg-gray-800 text-sm text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all">
             </div>
-            
-            @include('contratos.partials.add-button')
+
+            @can('contratos.create')
+                @include('contratos.partials.add-button')
+            @endcan
         </div>
     </div>
 
@@ -129,16 +131,21 @@
                     <td class="bg-white dark:bg-[#273142] px-6 py-1 text-center rounded-r-xl border-y border-r border-light-border dark:border-dark-border group-hover:bg-gray-50 dark:group-hover:bg-[#323d4d] transition-all duration-300 shadow-sm">
                         <div class="flex justify-center gap-2">
                             <!-- Ver -->
+                            @can('contratos.view')
                             <button type="button" class="btn-view w-7 h-7 rounded-full bg-white dark:bg-black flex items-center justify-center shadow-md text-black dark:text-white hover:bg-[#3498db] hover:text-white transition-colors duration-300 cursor-pointer" title="Ver Detalles">
                                 <i class="fa-solid fa-eye text-sm pointer-events-none"></i>
                             </button>
+                            @endcan
 
                             <!-- Editar -->
+                            @can('contratos.edit')
                             <button type="button" class="btn-edit w-7 h-7 rounded-full bg-white dark:bg-black flex items-center justify-center shadow-md text-black dark:text-white hover:bg-[#e67e22] hover:text-white transition-colors duration-300 cursor-pointer" title="Editar">
                                 <i class="fa-solid fa-pen text-sm pointer-events-none"></i>
                             </button>
+                            @endcan
 
                             <!-- Eliminar -->
+                            @can('contratos.delete')
                             <form action="{{ route('contratos.destroy', $contrato->id_contrato) }}" method="POST" class="inline">
                                 @csrf
                                 @method('DELETE')
@@ -146,6 +153,7 @@
                                     <i class="fa-solid fa-trash text-sm pointer-events-none"></i>
                                 </button>
                             </form>
+                            @endcan
                         </div>
                     </td>
                 </tr>

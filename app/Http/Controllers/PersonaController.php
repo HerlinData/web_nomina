@@ -10,6 +10,9 @@ class PersonaController extends Controller
 {
     public function index(Request $request)
     {
+        // Verificar permiso
+        abort_unless(auth()->user()->can('personas.view'), 403);
+
         // Iniciamos la consulta
         $query = Persona::with('contratos');
 
@@ -70,6 +73,9 @@ class PersonaController extends Controller
 
     public function store(Request $request)
     {
+        // Verificar permiso
+        abort_unless(auth()->user()->can('personas.create'), 403);
+
         $validated = $request->validate([
             'nombres' => 'required|max:255',
             'apellido_paterno' => 'required|max:255',
@@ -84,6 +90,11 @@ class PersonaController extends Controller
 
     public function update(Request $request, $id)
     {
+        // Verificar permiso
+        if (auth()->user()->cannot('personas.edit')) {
+            return response()->json(['error' => 'No tienes permiso para editar personas'], 403);
+        }
+
         // Validamos los datos básicos
         $validated = $request->validate([
             'numero_documento' => 'required|max:20',

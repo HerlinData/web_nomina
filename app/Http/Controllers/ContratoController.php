@@ -13,6 +13,9 @@ class ContratoController extends Controller
      */
     public function index(Request $request)
     {
+        // Verificar permiso
+        abort_unless(auth()->user()->can('contratos.view'), 403);
+
         // Iniciamos la consulta con relaciones para evitar N+1
         $query = Contrato::with(['persona', 'cargo']);
 
@@ -88,5 +91,50 @@ class ContratoController extends Controller
         return view('contratos.create');
     }
 
-    // ... Store, Show, Edit, Update, Destroy (Pendientes para tu equipo)
+    /**
+     * Store a newly created resource in storage.
+     */
+    public function store(Request $request)
+    {
+        // Verificar permiso
+        abort_unless(auth()->user()->can('contratos.create'), 403);
+
+        // Implementar lógica de creación
+        // ...
+    }
+
+    /**
+     * Update the specified resource in storage.
+     */
+    public function update(Request $request, $id)
+    {
+        // Verificar permiso
+        if (auth()->user()->cannot('contratos.edit')) {
+            return response()->json(['error' => 'No tienes permiso para editar contratos'], 403);
+        }
+
+        // Implementar lógica de actualización
+        $contrato = Contrato::findOrFail($id);
+
+        $contrato->update([
+            'fecha_inicio' => $request->fecha_inicio,
+            'fecha_fin' => $request->fecha_fin,
+            'haber_basico' => $request->haber_basico,
+            'estado' => $request->estado,
+        ]);
+
+        return response()->json(['success' => true, 'message' => 'Contrato actualizado correctamente']);
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     */
+    public function destroy($id)
+    {
+        // Verificar permiso
+        abort_unless(auth()->user()->can('contratos.delete'), 403);
+
+        // Implementar lógica de eliminación
+        // ...
+    }
 }

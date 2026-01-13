@@ -57,7 +57,7 @@
 
                     <div class="mt-8 flex justify-end gap-3 pt-4 border-t border-light-border dark:border-dark-border">
                         <x-forms.secondary-button type="button" onclick="closeModal('edit-modal')">Cancelar</x-forms.secondary-button>
-                        <x-forms.primary-button>Guardar Cambios</x-forms.primary-button>
+                        <x-forms.primary-button id="btn-save-contrato">Guardar Cambios</x-forms.primary-button>
                     </div>
                 </form>
             </div>

@@ -25,8 +25,50 @@
         const csrfTokenMeta = document.querySelector('meta[name="csrf-token"]');
         const csrfToken = csrfTokenMeta ? csrfTokenMeta.getAttribute('content') : '';
 
-        // A. Lógica AJAX (Guardar/Editar)
-        // (Pendiente: adaptar formulario de edición cuando exista el endpoint update)
+        // A. Lógica de Edición (AJAX)
+        const btnSave = document.getElementById('btn-save-contrato');
+        if(btnSave) {
+            btnSave.addEventListener('click', async () => {
+                const id = document.getElementById('edit-id') ? document.getElementById('edit-id').value : '';
+                if(!id) { alert('Error: ID no encontrado.'); return; }
+
+                const data = {
+                    fecha_inicio: document.getElementById('edit-inicio').value,
+                    fecha_fin: document.getElementById('edit-fin').value,
+                    haber_basico: document.getElementById('edit-salario').value,
+                    estado: document.getElementById('edit-estado').value,
+                };
+
+                try {
+                    btnSave.disabled = true;
+                    btnSave.innerText = 'Guardando...';
+
+                    const response = await fetch(`/contratos/${id}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': csrfToken,
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify(data)
+                    });
+
+                    if (response.ok) {
+                        alert('Guardado exitosamente');
+                        window.location.reload();
+                    } else {
+                        const result = await response.json();
+                        alert('Error: ' + (result.message || 'Verifique los datos'));
+                    }
+                } catch (error) {
+                    console.error(error);
+                    alert('Error de conexión');
+                } finally {
+                    btnSave.disabled = false;
+                    btnSave.innerText = 'Guardar Cambios';
+                }
+            });
+        }
 
         // B. Event Delegation
         document.addEventListener('click', function(e) {

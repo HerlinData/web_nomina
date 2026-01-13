@@ -26,7 +26,7 @@
         const csrfToken = csrfTokenMeta ? csrfTokenMeta.getAttribute('content') : '';
 
         // A. Lógica de Edición (AJAX)
-        const btnSave = document.querySelector('#edit-modal button.bg-primary');
+        const btnSave = document.getElementById('btn-save-persona');
         if(btnSave) {
             btnSave.addEventListener('click', async () => {
                 const id = document.getElementById('edit-id') ? document.getElementById('edit-id').value : '';

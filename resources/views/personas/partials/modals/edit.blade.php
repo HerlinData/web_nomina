@@ -20,7 +20,6 @@
                             <select id="edit-tdoc" class="w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-[#121820] dark:text-white py-2.5 px-4 mt-1 focus:border-indigo-500 focus:ring-indigo-500 shadow-sm">
                                 <option value="DNI">DNI</option>
                                 <option value="CE">CE</option>
-                                <option value="PAS">Pasaporte</option>
                             </select>
                         </div>
                         <div>
@@ -86,7 +85,7 @@
 
             <!-- Footer -->
             <div class="bg-gray-50 dark:bg-gray-800 px-8 py-5 flex flex-row-reverse border-t border-light-border dark:border-dark-border gap-4">
-                <x-forms.primary-button>Guardar Cambios</x-forms.primary-button>
+                <x-forms.primary-button id="btn-save-persona">Guardar Cambios</x-forms.primary-button>
                 <x-forms.secondary-button type="button" onclick="closeModal('edit-modal')">Cancelar</x-forms.secondary-button>
             </div>
         </div>

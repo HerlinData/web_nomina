@@ -41,3 +41,15 @@
     background-color: var(--color-dark-sidebar);
   }
 }
+
+/* Ocultar la flecha nativa de los selectores de asistencia */
+.asistencia-select,
+.column-action-select {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+}
+
+[x-cloak] {
+    display: none !important;
+}

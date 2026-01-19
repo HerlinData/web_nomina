@@ -163,20 +163,35 @@
         const distritoSelect = document.getElementById('new-distrito');
 
         if (paisSelect && departamentoSelect && distritoSelect) {
-            const deptOptions = Array.from(departamentoSelect.options);
-            const distOptions = Array.from(distritoSelect.options);
+            // Clonar los datos de las opciones (no las referencias del DOM)
+            const deptOptions = Array.from(departamentoSelect.options).map(opt => ({
+                value: opt.value,
+                text: opt.text,
+                dataPais: opt.dataset.pais
+            }));
 
-            function rebuildOptions(select, options) {
+            const distOptions = Array.from(distritoSelect.options).map(opt => ({
+                value: opt.value,
+                text: opt.text,
+                dataDepartamento: opt.dataset.departamento
+            }));
+
+            function rebuildOptions(select, optionsData) {
                 select.innerHTML = '';
-                const fragment = document.createDocumentFragment();
-                options.forEach((opt) => fragment.appendChild(opt));
-                select.appendChild(fragment);
+                optionsData.forEach((optData) => {
+                    const option = document.createElement('option');
+                    option.value = optData.value;
+                    option.text = optData.text;
+                    if (optData.dataPais) option.dataset.pais = optData.dataPais;
+                    if (optData.dataDepartamento) option.dataset.departamento = optData.dataDepartamento;
+                    select.appendChild(option);
+                });
             }
 
             function filterDepartamentos() {
                 const paisId = paisSelect.value;
-                const filtered = deptOptions.filter((opt) => {
-                    return !opt.value || opt.dataset.pais === paisId;
+                const filtered = deptOptions.filter((optData) => {
+                    return !optData.value || String(optData.dataPais) === String(paisId);
                 });
                 rebuildOptions(departamentoSelect, filtered);
                 departamentoSelect.value = '';
@@ -185,9 +200,18 @@
 
             function filterDistritos() {
                 const departamentoId = departamentoSelect.value;
-                const filtered = distOptions.filter((opt) => {
-                    return !opt.value || opt.dataset.departamento === departamentoId;
+
+                if (!departamentoId) {
+                    const defaultOption = distOptions.find(optData => !optData.value);
+                    rebuildOptions(distritoSelect, defaultOption ? [defaultOption] : []);
+                    distritoSelect.value = '';
+                    return;
+                }
+
+                const filtered = distOptions.filter((optData) => {
+                    return !optData.value || String(optData.dataDepartamento) === String(departamentoId);
                 });
+
                 rebuildOptions(distritoSelect, filtered);
                 distritoSelect.value = '';
             }

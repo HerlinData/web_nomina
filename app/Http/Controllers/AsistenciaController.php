@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Asistencia;
 use App\Models\Contrato;
 use App\Models\ItemAsistencia;
+use App\Models\Calendario;
 use App\Models\Pago;
 use App\Models\Planilla;
 use Carbon\Carbon;
@@ -25,6 +26,7 @@ class AsistenciaController extends Controller
         $pagoSeleccionado = null;
         $contratos = collect();
         $fechas = [];
+        $feriados = []; // Inicializamos la variable
         $itemsAsistencia = ItemAsistencia::all();
 
         if ($request->has('id_pago') && $request->id_pago) {
@@ -33,6 +35,14 @@ class AsistenciaController extends Controller
             if ($pagoSeleccionado) {
                 $fechaInicio = Carbon::parse($pagoSeleccionado->inicio);
                 $fechaFin = Carbon::parse($pagoSeleccionado->fin);
+
+                // Obtener feriados del periodo
+                $feriados = Calendario::whereBetween('fecha', [$fechaInicio, $fechaFin])
+                    ->where('tipo_dia', 'Feriado')
+                    ->pluck('fecha')
+                    ->map(fn ($fecha) => $fecha->format('Y-m-d'))
+                    ->flip() // Usamos flip para tener las fechas como keys para búsqueda rápida (O(1))
+                    ->all();
 
                 // Generar array de fechas del periodo
                 $periodo = CarbonPeriod::create($fechaInicio, $fechaFin);
@@ -97,7 +107,7 @@ class AsistenciaController extends Controller
             }
         }
 
-        return view('asistencia.index', compact('pagos', 'planillas', 'pagoSeleccionado', 'contratos', 'fechas', 'itemsAsistencia'));
+        return view('asistencia.index', compact('pagos', 'planillas', 'pagoSeleccionado', 'contratos', 'fechas', 'itemsAsistencia', 'feriados'));
     }
 
     public function guardar(Request $request): JsonResponse

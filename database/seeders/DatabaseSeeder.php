@@ -24,8 +24,7 @@ class DatabaseSeeder extends Seeder
 
         // Seed roles and permissions
         $this->call([
-            GeoSeeder::class,
-            PeruGeoSeeder::class,
+            GeografiaSeeder::class,
             RolePermissionSeeder::class,
         ]);
     }

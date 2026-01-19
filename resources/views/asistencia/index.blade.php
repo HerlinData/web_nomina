@@ -85,11 +85,24 @@
                             @php
                                 $diaSemana = $fecha->locale('es')->isoFormat('ddd');
                                 $esFinSemana = $fecha->isWeekend();
+                                $esFeriado = isset($feriados[$fecha->format('Y-m-d')]);
                             @endphp
-                            <th class="px-1 py-2 text-center text-xs font-semibold uppercase tracking-wider min-w-[45px] {{ $esFinSemana ? 'bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400' : 'text-gray-500 dark:text-gray-400' }}">
-                                <div class="flex flex-col">
-                                    <span class="text-[10px]">{{ $diaSemana }}</span>
-                                    <span>{{ $fecha->format('d') }}</span>
+                            <th class="px-1 py-2 text-center text-xs font-semibold uppercase tracking-wider min-w-[55px] {{ $esFeriado ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400' : ($esFinSemana ? 'bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400' : 'text-gray-500 dark:text-gray-400') }}">
+                                <div class="flex flex-col items-center gap-1">
+                                    <div class="flex flex-col">
+                                        <span class="text-[10px]">{{ $diaSemana }}</span>
+                                        <span>{{ $fecha->format('d') }}</span>
+                                    </div>
+                                    <select class="column-action-select w-full text-[10px] p-0.5 rounded border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 focus:outline-none text-center" data-fecha="{{ $fecha->format('Y-m-d') }}">
+                                        <option value="">-</option>
+                                        @if($esFeriado)
+                                            <option value="TF">TF</option>
+                                            <option value="DF">DF</option>
+                                        @else
+                                            <option value="A">A</option>
+                                            <option value="D">D</option>
+                                        @endif
+                                    </select>
                                 </div>
                             </th>
                         @endforeach
@@ -136,8 +149,9 @@
                                     $asistencia = $contrato->asistencias_periodo[$fechaStr] ?? null;
                                     $valorActual = $asistencia ? $asistencia->id_cod_asistencia : '';
                                     $esFinSemana = $fecha->isWeekend();
+                                    $esFeriado = isset($feriados[$fechaStr]);
                                 @endphp
-                                <td class="px-1 py-1 text-center {{ $esFinSemana ? 'bg-orange-50 dark:bg-orange-900/20' : '' }} {{ !$dentroRango ? 'bg-gray-100 dark:bg-gray-800' : '' }}">
+                                <td class="px-1 py-1 text-center {{ $esFeriado ? 'bg-red-50 dark:bg-red-900/20' : ($esFinSemana ? 'bg-orange-50 dark:bg-orange-900/20' : '') }} {{ !$dentroRango ? 'bg-gray-100 dark:bg-gray-800' : '' }}">
                                     @if($dentroRango)
                                         <select
                                             class="asistencia-select w-full text-xs px-1 py-1 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white focus:outline-none focus:ring-1 focus:ring-primary/50 text-center"
@@ -146,9 +160,17 @@
                                         >
                                             <option value="">-</option>
                                             @foreach($itemsAsistencia as $item)
-                                                <option value="{{ $item->id_cod_asistencia }}" {{ $valorActual == $item->id_cod_asistencia ? 'selected' : '' }}>
-                                                    {{ $item->codigo_asistencia }}
-                                                </option>
+                                                @if($esFeriado)
+                                                    @if(!Str::startsWith($item->codigo_asistencia, 'A') && $item->codigo_asistencia !== 'D')
+                                                        <option value="{{ $item->id_cod_asistencia }}" {{ $valorActual == $item->id_cod_asistencia ? 'selected' : '' }}>
+                                                            {{ $item->codigo_asistencia }}
+                                                        </option>
+                                                    @endif
+                                                @else
+                                                    <option value="{{ $item->id_cod_asistencia }}" {{ $valorActual == $item->id_cod_asistencia ? 'selected' : '' }}>
+                                                        {{ $item->codigo_asistencia }}
+                                                    </option>
+                                                @endif
                                             @endforeach
                                         </select>
                                     @else
@@ -183,62 +205,95 @@
     @push('scripts')
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const selects = document.querySelectorAll('.asistencia-select');
+            // Mapeo de códigos de asistencia a sus IDs
+            const itemsAsistenciaMap = @json($itemsAsistencia->mapWithKeys(function ($item) {
+                return [$item->codigo_asistencia => $item->id_cod_asistencia];
+            }));
 
+            // Lógica de guardado para selectores individuales
+            const selects = document.querySelectorAll('.asistencia-select');
             selects.forEach(select => {
                 select.addEventListener('change', function() {
-                    const idContrato = this.dataset.contrato;
-                    const fecha = this.dataset.fecha;
-                    const idCodAsistencia = this.value;
-
-                    // Indicador visual de guardando
-                    this.classList.add('opacity-50');
-                    this.disabled = true;
-
-                    fetch('{{ route("asistencia.guardar") }}', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                            'Accept': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            id_contrato: idContrato,
-                            fecha: fecha,
-                            id_cod_asistencia: idCodAsistencia || null
-                        })
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        this.classList.remove('opacity-50');
-                        this.disabled = false;
-
-                        if (data.success) {
-                            // Flash verde de éxito
-                            this.classList.add('ring-2', 'ring-green-500');
-                            setTimeout(() => {
-                                this.classList.remove('ring-2', 'ring-green-500');
-                            }, 500);
-                        } else {
-                            // Flash rojo de error
-                            this.classList.add('ring-2', 'ring-red-500');
-                            setTimeout(() => {
-                                this.classList.remove('ring-2', 'ring-red-500');
-                            }, 1000);
-                            alert(data.error || 'Error al guardar');
-                        }
-                    })
-                    .catch(error => {
-                        this.classList.remove('opacity-50');
-                        this.disabled = false;
-                        this.classList.add('ring-2', 'ring-red-500');
-                        setTimeout(() => {
-                            this.classList.remove('ring-2', 'ring-red-500');
-                        }, 1000);
-                        console.error('Error:', error);
-                    });
+                    guardarAsistencia(this);
                 });
             });
+            
+            // Lógica para los selectores de acción de columna
+            const columnActionSelects = document.querySelectorAll('.column-action-select');
+            columnActionSelects.forEach(headerSelect => {
+                headerSelect.addEventListener('change', function() {
+                    const fecha = this.dataset.fecha;
+                    const codigoSeleccionado = this.value; // ej: "A", "D", "TF", "DF"
+
+                    if (!codigoSeleccionado) return;
+
+                    const idParaAsignar = itemsAsistenciaMap[codigoSeleccionado] || '';
+                    const selectsEnColumna = document.querySelectorAll(`.asistencia-select[data-fecha="${fecha}"]`);
+
+                    selectsEnColumna.forEach(cellSelect => {
+                        // Solo cambia si el valor es diferente y la opción existe en el select
+                        if (cellSelect.value !== idParaAsignar && Array.from(cellSelect.options).some(opt => opt.value == idParaAsignar)) {
+                            cellSelect.value = idParaAsignar;
+                            // Disparamos el evento change para que se guarde automáticamente
+                            cellSelect.dispatchEvent(new Event('change'));
+                        }
+                    });
+
+                    // Reseteamos el select del header
+                    this.value = '';
+                });
+            });
+
+            // Función de guardado refactorizada
+            function guardarAsistencia(selectElement) {
+                const idContrato = selectElement.dataset.contrato;
+                const fecha = selectElement.dataset.fecha;
+                const idCodAsistencia = selectElement.value;
+
+                selectElement.classList.add('opacity-50');
+                selectElement.disabled = true;
+
+                fetch('{{ route("asistencia.guardar") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        id_contrato: idContrato,
+                        fecha: fecha,
+                        id_cod_asistencia: idCodAsistencia || null
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    selectElement.classList.remove('opacity-50');
+                    selectElement.disabled = false;
+
+                    if (data.success) {
+                        selectElement.classList.add('ring-2', 'ring-green-500');
+                        setTimeout(() => {
+                            selectElement.classList.remove('ring-2', 'ring-green-500');
+                        }, 500);
+                    } else {
+                        selectElement.classList.add('ring-2', 'ring-red-500');
+                        setTimeout(() => {
+                            selectElement.classList.remove('ring-2', 'ring-red-500');
+                        }, 1000);
+                        alert(data.error || 'Error al guardar');
+                    }
+                })
+                .catch(error => {
+                    selectElement.classList.remove('opacity-50');
+                    selectElement.disabled = false;
+                    selectElement.classList.add('ring-2', 'ring-red-500');
+                    setTimeout(() => {
+                        selectElement.classList.remove('ring-2', 'ring-red-500');
+                    }, 1000);
+                    console.error('Error:', error);
+                });
+            }
         });
     </script>
     @endpush

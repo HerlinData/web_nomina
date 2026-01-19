@@ -3,11 +3,19 @@
 namespace App\Http\Controllers;
 
 use App\Models\Contrato;
+use App\Services\ContratoService;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
 class ContratoController extends Controller
 {
+    protected $contratoService;
+
+    public function __construct(ContratoService $contratoService)
+    {
+        $this->contratoService = $contratoService;
+    }
+
     /**
      * Display a listing of the resource.
      */
@@ -17,7 +25,17 @@ class ContratoController extends Controller
         abort_unless(auth()->user()->can('contratos.view'), 403);
 
         // Iniciamos la consulta con relaciones para evitar N+1
-        $query = Contrato::with(['persona', 'cargo']);
+        $query = Contrato::with([
+            'persona',
+            'cargo',
+            'movimientos.planilla',
+            'movimientos.fondoPensiones',
+            'movimientos.cargo',
+            'movimientos.banco',
+            'movimientos.condicion',
+            'movimientos.moneda',
+            'movimientos.centroCosto'
+        ]);
 
         // Filtro por Nombre de Empleado
         if ($request->filled('search_name')) {
@@ -37,14 +55,8 @@ class ContratoController extends Controller
             });
         }
 
-        // Filtro por Estado (opcional, si quisieras agregar un select en la vista)
-        if ($request->filled('filter_status')) {
-            $query->where('estado', $request->filter_status);
-        }
-
-        // Ordenar: Activos primero, luego por fecha inicio descendente
-        $query->orderBy('estado', 'desc')
-              ->orderBy('inicio_contrato', 'desc');
+        // Ordenar: por fecha inicio descendente
+        $query->orderBy('inicio_contrato', 'desc');
 
         // Paginación
         $contratos = $query->paginate(7)->appends($request->all());
@@ -55,18 +67,13 @@ class ContratoController extends Controller
         // 1. Total Contratos Históricos
         $total = Contrato::count();
 
-        // 2. Activos (Estado = 1 y fechas válidas)
-        $activos = Contrato::where('estado', 1)
-            ->where('inicio_contrato', '<=', $hoy)
-            ->where(function($q) use ($hoy) {
-                $q->whereNull('fin_contrato')
-                  ->orWhere('fin_contrato', '>=', $hoy);
-            })->count();
+        // 2. Activos
+        $activos = Contrato::activos()->count();
 
-        // 3. Por Vencer (Activos que terminan en los próximos 30 días)
-        $porVencer = Contrato::where('estado', 1)
-            ->whereNotNull('fin_contrato')
-            ->whereBetween('fin_contrato', [$hoy, $hoy->copy()->addDays(30)])
+        // 3. Por Vencer
+        $porVencer = Contrato::activos() // Contratos activos según nuestro scope
+            ->whereNotNull('fin_contrato') // Deben tener una fecha de fin definida
+            ->whereBetween('fin_contrato', [$hoy->copy()->addDay(), $hoy->copy()->addDays(30)]) // Que estén entre mañana y los próximos 30 días
             ->count();
 
         $kpis = [
@@ -99,8 +106,51 @@ class ContratoController extends Controller
         // Verificar permiso
         abort_unless(auth()->user()->can('contratos.create'), 403);
 
-        // Implementar lógica de creación
-        // ...
+        // Validar token de sesion
+        $tokenData = session()->get('contrato_token');
+        if (!$tokenData || $tokenData['token'] !== $request->token) {
+            return response()->json([
+                'ok' => false,
+                'error' => 'Token invalido o expirado. Inicie el proceso nuevamente.'
+            ], 400);
+        }
+
+        // Verificar que no haya expirado
+        if (now()->isAfter($tokenData['expires_at'])) {
+            session()->forget('contrato_token');
+            return response()->json([
+                'ok' => false,
+                'error' => 'La sesion ha expirado. Inicie el proceso nuevamente.'
+            ], 400);
+        }
+
+        // Validar datos (validaciones basicas, la integridad referencial se maneja en BD)
+        $validated = $request->validate([
+            'token' => 'required|string',
+            'id_persona' => 'required|integer',
+            'id_cargo' => 'required|integer',
+            'id_planilla' => 'required|integer',
+            'id_fp' => 'required|integer',
+            'id_condicion' => 'required|integer',
+            'id_banco' => 'required|integer',
+            'id_moneda' => 'required|integer',
+            'id_centro_costo' => 'required|integer',
+            'inicio_contrato' => 'required|date',
+            'fin_contrato' => 'required|date|after:inicio_contrato',
+            'haber_basico' => 'required|numeric|min:0',
+            'asignacion_familiar' => 'nullable',
+            'movilidad' => 'nullable|numeric|min:0',
+            'numero_cuenta' => 'nullable|string|max:100',
+            'codigo_interbancario' => 'nullable|string|max:20',
+            'periodo_prueba' => 'nullable',
+        ]);
+
+        $resultado = $this->contratoService->crearContrato($validated, $tokenData['tipo_movimiento']);
+
+        // Limpiar token de sesion
+        session()->forget('contrato_token');
+
+        return response()->json($resultado);
     }
 
     /**
@@ -120,7 +170,6 @@ class ContratoController extends Controller
             'fecha_inicio' => $request->fecha_inicio,
             'fecha_fin' => $request->fecha_fin,
             'haber_basico' => $request->haber_basico,
-            'estado' => $request->estado,
         ]);
 
         return response()->json(['success' => true, 'message' => 'Contrato actualizado correctamente']);
@@ -136,5 +185,112 @@ class ContratoController extends Controller
 
         // Implementar lógica de eliminación
         // ...
+    }
+
+    /**
+     * Update the specified movement.
+     */
+    public function updateMovimiento(Request $request, $id)
+    {
+        // Verificar permiso
+        if (auth()->user()->cannot('contratos.edit')) {
+            return response()->json(['error' => 'No tienes permiso para editar movimientos'], 403);
+        }
+
+        // Validar datos
+        $validated = $request->validate([
+            'tipo_movimiento' => 'nullable|string|max:50',
+            'id_cargo' => 'nullable|exists:bronze.dim_cargos,id_cargo',
+            'id_planilla' => 'nullable|exists:bronze.dim_planillas,id_planilla',
+            'inicio' => 'nullable|date',
+            'fin' => 'nullable|date|after_or_equal:inicio',
+            'haber_basico' => 'required|numeric|min:0',
+            'movilidad' => 'nullable|numeric|min:0',
+            'asignacion_familiar' => 'required|boolean',
+            'id_fp' => 'nullable|exists:bronze.dim_fondos_pensiones,id_fondo',
+            'id_condicion' => 'nullable|exists:bronze.dim_condiciones,id_condicion',
+            'id_banco' => 'nullable|exists:bronze.dim_bancos,id_banco',
+            'id_centro_costo' => 'nullable|exists:bronze.dim_centros_costo,id_centro_costo',
+            'id_moneda' => 'nullable|exists:bronze.dim_monedas,id_moneda',
+        ]);
+
+        // Buscar el movimiento
+        $movimiento = \App\Models\ContratoMovimiento::findOrFail($id);
+
+        // Actualizar el movimiento
+        $movimiento->update($validated);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Movimiento actualizado correctamente'
+        ]);
+    }
+
+    /**
+     * Evaluar si se puede crear un contrato (API)
+     */
+    public function evaluarContrato(Request $request)
+    {
+        $validated = $request->validate([
+            'numero_documento' => 'required|string',
+            'fecha_inicio' => 'required|date',
+        ]);
+
+        $resultado = $this->contratoService->evaluarContrato(
+            $validated['numero_documento'],
+            $validated['fecha_inicio']
+        );
+
+        return response()->json($resultado);
+    }
+
+    /**
+     * Obtener historial de contratos de una persona (API)
+     */
+    public function obtenerHistorial(Request $request)
+    {
+        $validated = $request->validate([
+            'id_persona' => 'required|integer',
+        ]);
+
+        // Verificar que la persona existe
+        $persona = \App\Models\Persona::find($validated['id_persona']);
+        if (!$persona) {
+            return response()->json([
+                'error' => 'Persona no encontrada'
+            ], 404);
+        }
+
+        $historial = $this->contratoService->obtenerHistorial($validated['id_persona']);
+
+        return response()->json($historial);
+    }
+
+    /**
+     * Obtener la fecha de inicio del último contrato de una persona (API)
+     */
+    public function obtenerUltimoInicio(string $numero_documento)
+    {
+        $persona = \App\Models\Persona::where('numero_documento', $numero_documento)->first();
+
+        if (!$persona) {
+            return response()->json([
+                'persona_nombre' => null,
+                'ultimo_inicio_contrato' => null,
+                'ultimo_fin_contrato' => null,
+            ]);
+        }
+
+        $ultimoContrato = Contrato::where('id_persona', $persona->id_persona)
+            ->orderBy('inicio_contrato', 'desc')
+            ->first();
+        
+        $fechaFin = $ultimoContrato ? ($ultimoContrato->fecha_renuncia ?? $ultimoContrato->fin_contrato) : null;
+
+        return response()->json([
+            'persona_nombre' => $persona->nombre_completo,
+            'ultimo_inicio_contrato' => $ultimoContrato ? $ultimoContrato->inicio_contrato : null,
+            'ultimo_fin_contrato' => $fechaFin,
+        ]);
     }
 }

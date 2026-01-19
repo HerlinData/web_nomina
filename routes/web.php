@@ -55,6 +55,11 @@ Route::middleware('auth')->group(function () {
         ->delete('/contratos/{contrato}', [App\Http\Controllers\ContratoController::class, 'destroy'])
         ->name('contratos.destroy');
 
+    // Rutas para Movimientos de Contratos
+    Route::middleware(['permission:contratos.edit'])
+        ->put('/contratos/movimientos/{movimiento}', [App\Http\Controllers\ContratoController::class, 'updateMovimiento'])
+        ->name('contratos.movimientos.update');
+
     // 5. Rutas de Asistencia - Protegidas por permisos
     Route::middleware(['permission:asistencia.view'])->group(function () {
         Route::get('/asistencia', [App\Http\Controllers\AsistenciaController::class, 'index'])->name('asistencia.index');
@@ -84,6 +89,36 @@ Route::middleware('auth')->group(function () {
         Route::get('/roles/{role}', [App\Http\Controllers\Admin\RoleController::class, 'show'])->name('roles.show');
         Route::put('/roles/{role}/permissions', [App\Http\Controllers\Admin\RoleController::class, 'updatePermissions'])->name('roles.update-permissions');
         Route::delete('/roles/{role}', [App\Http\Controllers\Admin\RoleController::class, 'destroy'])->name('roles.destroy');
+    });
+
+    // API Routes para cargar datos de tablas dimension
+    Route::prefix('api')->group(function () {
+        Route::get('/cargos', function () {
+            return response()->json(\App\Models\Cargo::select('id_cargo', 'nombre_cargo')->get());
+        });
+        Route::get('/planillas', function () {
+            return response()->json(\App\Models\Planilla::select('id_planilla', 'nombre_planilla')->get());
+        });
+        Route::get('/fondos-pensiones', function () {
+            return response()->json(\App\Models\FondoPensiones::select('id_fondo', 'fondo_pension')->get());
+        });
+        Route::get('/condiciones', function () {
+            return response()->json(\App\Models\Condicion::select('id_condicion', 'nombre_condicion')->get());
+        });
+        Route::get('/bancos', function () {
+            return response()->json(\App\Models\Banco::select('id_banco', 'nombre_banco')->get());
+        });
+        Route::get('/centros-costo', function () {
+            return response()->json(\App\Models\CentroCosto::select('id_centro_costo', 'nombre_centro_costo as nombre')->get());
+        });
+        Route::get('/monedas', function () {
+            return response()->json(\App\Models\Moneda::select('id_moneda', 'nombre_moneda')->get());
+        });
+
+        // API para flujo de creacion de contratos
+        Route::post('/contratos/evaluar', [App\Http\Controllers\ContratoController::class, 'evaluarContrato']);
+        Route::post('/contratos/historial', [App\Http\Controllers\ContratoController::class, 'obtenerHistorial']);
+        Route::get('/personas/{numero_documento}/ultimo-inicio', [App\Http\Controllers\ContratoController::class, 'obtenerUltimoInicio']);
     });
 });
 

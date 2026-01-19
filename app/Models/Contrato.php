@@ -15,7 +15,7 @@ class Contrato extends Model
         'asignacion_familiar', 'haber_basico', 'movilidad', 'id_banco',
         'numero_cuenta', 'codigo_interbancario', 'id_moneda',
         'inicio_contrato', 'fin_contrato', 'fecha_renuncia',
-        'periodo_prueba', 'id_centro_costo', 'estado', 'fecha_insercion'
+        'periodo_prueba', 'id_centro_costo', 'fecha_insercion'
     ];
 
     // Relaciones
@@ -47,5 +47,51 @@ class Contrato extends Model
     public function condicion()
     {
         return $this->belongsTo(Condicion::class, 'id_condicion', 'id_condicion');
+    }
+
+    public function movimientos()
+    {
+        return $this->hasMany(ContratoMovimiento::class, 'id_contrato', 'id_contrato');
+    }
+
+    // Accessor para calcular el estado en tiempo real
+    public function getEstadoAttribute(): string
+    {
+        $hoy = now()->toDateString();
+        $inicio = $this->inicio_contrato;
+        $finEfectivo = $this->fecha_renuncia ?? $this->fin_contrato;
+
+        if ($inicio > $hoy) {
+            return 'Pendiente'; // Aún no ha iniciado
+        }
+
+        if ($finEfectivo === null || $finEfectivo >= $hoy) {
+            return 'Activo'; // Indefinido o con fecha de fin/renuncia en el futuro o hoy
+        }
+
+        return 'Finalizado'; // Else, ha terminado
+    }
+
+    // Scope para obtener contratos activos
+    public function scopeActivos($query)
+    {
+        $hoy = now()->toDateString();
+        
+        return $query->where('inicio_contrato', '<=', $hoy) // Ha iniciado o inicia hoy
+                     ->where(function ($q) use ($hoy) {
+                         // Un contrato es activo si su fin efectivo es NULL o es hoy/futuro
+                         $q->where(function ($subQ) { // Condición 1: Indefinido (y no tiene fecha_renuncia)
+                               $subQ->whereNull('fin_contrato')
+                                    ->whereNull('fecha_renuncia');
+                           })
+                           ->orWhere(function ($subQ) use ($hoy) { // Condición 2: Tiene una fecha de fin efectiva hoy o en el futuro
+                               $subQ->whereRaw("
+                                   CASE 
+                                       WHEN fecha_renuncia IS NOT NULL THEN fecha_renuncia
+                                       ELSE fin_contrato
+                                   END >= ?
+                               ", [$hoy]);
+                           });
+                     });
     }
 }

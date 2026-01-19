@@ -102,5 +102,10 @@
     
     @stack('modals')
     @stack('scripts')
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            window.Alpine.start();
+        });
+    </script>
 </body>
 </html>

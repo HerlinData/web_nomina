@@ -25,12 +25,14 @@ class GeografiaSeeder extends Seeder
             // Limpiar datos
             $this->command->info("🗑️  Limpiando datos existentes...");
             $this->limpiarTabla('dim_distritos');
+            $this->limpiarTabla('dim_provincias');
             $this->limpiarTabla('dim_departamentos');
             $this->limpiarTabla('dim_paises');
 
             // Cargar datos
             $this->seedPaises($spreadsheet);
             $this->seedDepartamentos($spreadsheet);
+            $this->seedProvincias($spreadsheet);
             $this->seedDistritos($spreadsheet);
 
             $this->command->info("✅ Datos geográficos cargados exitosamente");
@@ -119,6 +121,40 @@ class GeografiaSeeder extends Seeder
         }
     }
 
+
+    /**
+     * Cargar provincias desde Excel
+     */
+    private function seedProvincias($spreadsheet): void
+    {
+        $rows = $this->getRows($spreadsheet, 'dim_provincias');
+        if (!$rows) return;
+
+        $this->command->info("🏘️  Procesando provincias...");
+
+        $batch = [];
+        $now = now();
+
+        foreach ($rows as $row) {
+            $batch[] = [
+                'departamento_id' => (int) $row['A'],
+                'nombre' => trim($row['B']),
+                'created_at' => $now,
+                'updated_at' => $now,
+            ];
+
+            if (count($batch) >= 400) {
+                DB::table('bronze.dim_provincias')->insert($batch);
+                $batch = [];
+            }
+        }
+
+        if ($batch) {
+            DB::table('bronze.dim_provincias')->insert($batch);
+        }
+    }
+
+    
     /**
      * Cargar distritos desde Excel
      */
@@ -134,13 +170,14 @@ class GeografiaSeeder extends Seeder
 
         foreach ($rows as $row) {
             $batch[] = [
-                'departamento_id' => (int) $row['A'],
-                'nombre' => trim($row['B']),
+                'nombre' => trim($row['A']),
+                'provincia_id' => (int) $row['B'],
+                'departamento_id' => (int) $row['C'],
                 'created_at' => $now,
                 'updated_at' => $now,
             ];
 
-            if (count($batch) >= 500) {
+            if (count($batch) >= 300) {
                 DB::table('bronze.dim_distritos')->insert($batch);
                 $batch = [];
             }

@@ -6,6 +6,7 @@ use App\Models\Persona;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class PersonaController extends Controller
 {
@@ -33,20 +34,14 @@ class PersonaController extends Controller
         }
 
         // Paginamos el resultado filtrado
-        // appends($request->all()) es CLAVE: mantiene los filtros en los enlaces de la paginación
         $personas = $query->paginate(7)->appends($request->all());
 
-        // --- KPIs (Calculados sobre el TOTAL, no sobre la búsqueda) ---
-        
-        // Total Real
+        // KPIs (calculados sobre el total)
         $totalPersonas = Persona::count();
-        
-        // Nuevas
         $nuevas = Persona::whereMonth('fecha_registro', Carbon::now()->month)
                          ->whereYear('fecha_registro', Carbon::now()->year)
                          ->count();
 
-        // Activas (Cálculo optimizado)
         $hoy = Carbon::now()->format('Y-m-d');
         $activas = Persona::whereHas('contratos', function($q) use ($hoy) {
             $q->where('inicio_contrato', '<=', $hoy)
@@ -66,9 +61,10 @@ class PersonaController extends Controller
 
         $paises = DB::table('bronze.dim_paises')->orderBy('nombre')->get();
         $departamentos = DB::table('bronze.dim_departamentos')->orderBy('nombre')->get();
+        $provincias = DB::table('bronze.dim_provincias')->orderBy('nombre')->get();
         $distritos = DB::table('bronze.dim_distritos')->orderBy('nombre')->get();
 
-        return view('personas.index', compact('personas', 'kpis', 'paises', 'departamentos', 'distritos'));
+        return view('personas.index', compact('personas', 'kpis', 'paises', 'departamentos', 'provincias', 'distritos'));
     }
 
     public function create()
@@ -78,53 +74,80 @@ class PersonaController extends Controller
 
     public function store(Request $request)
     {
-        // Verificar permiso
         abort_unless(auth()->user()->can('personas.create'), 403);
 
-        $validated = $request->validate([
-            'nombres' => 'required|max:255',
-            'apellido_paterno' => 'required|max:255',
-            'numero_documento' => 'required|unique:bronze.dim_persona,numero_documento',
-            // Agrega más validaciones según necesites
+        $uniqueTable = config('database.default').'.bronze.dim_persona';
+        $validated = $request->validate(
+            [
+                'tipo_documento' => 'required',
+                'numero_documento' => [
+                    'required',
+                    'max:20',
+                    Rule::unique($uniqueTable, 'numero_documento'),
+                ],
+                'nombres' => 'required|max:255',
+                'apellido_paterno' => 'required|max:255',
+                'apellido_materno' => 'nullable|max:255',
+                'fecha_nacimiento' => 'nullable|date',
+                'genero' => 'nullable',
+                'pais' => 'nullable',
+                'departamento' => 'nullable',
+                'provincia' => 'nullable',
+                'distrito' => 'nullable',
+                'direccion' => 'nullable|max:255',
+                'numero_telefonico' => 'nullable|max:50',
+                'correo_electronico_personal' => 'nullable|email|max:255',
+                'correo_electronico_corporativo' => 'nullable|email|max:255',
+            ],
+            [
+                'numero_documento.unique' => 'Persona ya se encuentra en la base de datos',
+            ]
+        );
+
+        Persona::create($validated);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Persona registrada correctamente',
         ]);
-
-        Persona::create($request->all());
-
-        return redirect()->route('personas.index')->with('success', 'Persona registrada correctamente.');
     }
 
     public function update(Request $request, $id)
     {
-        // Verificar permiso
         if (auth()->user()->cannot('personas.edit')) {
             return response()->json(['error' => 'No tienes permiso para editar personas'], 403);
         }
 
-        // Validamos los datos básicos
-        $validated = $request->validate([
-            'numero_documento' => 'required|max:20',
-            'nombres' => 'required|max:255',
-            'apellido_paterno' => 'required|max:255',
-            'apellido_materno' => 'required|max:255',
-            'tipo_documento' => 'required',
-            // Agrega más validaciones según necesites
-        ]);
+        $uniqueTable = config('database.default').'.bronze.dim_persona';
+        $validated = $request->validate(
+            [
+                'tipo_documento' => 'required',
+                'numero_documento' => [
+                    'required',
+                    'max:20',
+                    Rule::unique($uniqueTable, 'numero_documento')->ignore($id, 'id_persona'),
+                ],
+                'nombres' => 'required|max:255',
+                'apellido_paterno' => 'required|max:255',
+                'apellido_materno' => 'nullable|max:255',
+                'fecha_nacimiento' => 'nullable|date',
+                'genero' => 'nullable',
+                'pais' => 'nullable',
+                'departamento' => 'nullable',
+                'provincia' => 'nullable',
+                'distrito' => 'nullable',
+                'direccion' => 'nullable|max:255',
+                'numero_telefonico' => 'nullable|max:50',
+                'correo_electronico_personal' => 'nullable|email|max:255',
+                'correo_electronico_corporativo' => 'nullable|email|max:255',
+            ],
+            [
+                'numero_documento.unique' => 'Persona ya se encuentra en la base de datos',
+            ]
+        );
 
         $persona = Persona::findOrFail($id);
-        
-        $persona->update([
-            'numero_documento' => $request->numero_documento,
-            'tipo_documento' => $request->tipo_documento,
-            'nacionalidad' => $request->nacionalidad,
-            'nombres' => $request->nombres,
-            'apellido_paterno' => $request->apellido_paterno,
-            'apellido_materno' => $request->apellido_materno,
-            'fecha_nacimiento' => $request->fecha_nacimiento,
-            'genero' => $request->genero,
-            'correo_electronico_personal' => $request->correo_electronico_personal,
-            'correo_electronico_corporativo' => $request->correo_electronico_corporativo,
-            'direccion' => $request->direccion,
-        ]);
+        $persona->update($validated);
 
         return response()->json(['success' => true, 'message' => 'Persona actualizada correctamente']);
     }

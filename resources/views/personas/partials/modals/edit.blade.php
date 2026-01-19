@@ -14,7 +14,7 @@
                     <input type="hidden" id="edit-id">
 
                     <!-- Fila 1 -->
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                         <div>
                             <x-forms.input-label for="edit-tdoc" value="Tipo Documento" />
                             <select id="edit-tdoc" class="w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-[#121820] dark:text-white py-2.5 px-4 mt-1 focus:border-indigo-500 focus:ring-indigo-500 shadow-sm">
@@ -25,10 +25,6 @@
                         <div>
                             <x-forms.input-label for="edit-doc" value="N° Documento" />
                             <x-forms.text-input id="edit-doc" type="text" class="w-full mt-1" />
-                        </div>
-                        <div>
-                            <x-forms.input-label for="edit-nacionalidad" value="Nacionalidad" />
-                            <x-forms.text-input id="edit-nacionalidad" type="text" class="w-full mt-1" />
                         </div>
                     </div>
 
@@ -59,11 +55,59 @@
                             <select id="edit-genero" class="w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-[#121820] dark:text-white py-2.5 px-4 mt-1 focus:border-indigo-500 focus:ring-indigo-500 shadow-sm">
                                 <option value="1">Masculino</option>
                                 <option value="2">Femenino</option>
+                                <option value="3">Otros</option>
                             </select>
                         </div>
                     </div>
 
                     <!-- Fila 4 -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                        <div>
+                            <x-forms.input-label for="edit-pais" value="Pais" />
+                            <select id="edit-pais" class="w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-[#121820] dark:text-white py-2.5 px-4 mt-1 focus:border-indigo-500 focus:ring-indigo-500 shadow-sm">
+                                <option value="">Seleccione un pais</option>
+                                @foreach ($paises as $pais)
+                                    <option value="{{ $pais->id }}">{{ $pais->nombre }} ({{ $pais->codigo_pais }})</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div>
+                            <x-forms.input-label for="edit-departamento" value="Departamento" />
+                            <select id="edit-departamento" class="w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-[#121820] dark:text-white py-2.5 px-4 mt-1 focus:border-indigo-500 focus:ring-indigo-500 shadow-sm">
+                                <option value="">Seleccione un departamento</option>
+                                @foreach ($departamentos as $departamento)
+                                    <option value="{{ $departamento->id }}" data-pais="{{ $departamento->pais_id }}">{{ $departamento->nombre }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div>
+                            <x-forms.input-label for="edit-provincia" value="Provincia" />
+                            <select id="edit-provincia" class="w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-[#121820] dark:text-white py-2.5 px-4 mt-1 focus:border-indigo-500 focus:ring-indigo-500 shadow-sm">
+                                <option value="">Seleccione una provincia</option>
+                                @foreach ($provincias as $provincia)
+                                    <option value="{{ $provincia->id }}" data-departamento="{{ $provincia->departamento_id }}">{{ $provincia->nombre }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Fila 5 -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                        <div>
+                            <x-forms.input-label for="edit-distrito" value="Distrito" />
+                            <select id="edit-distrito" class="w-full rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-[#121820] dark:text-white py-2.5 px-4 mt-1 focus:border-indigo-500 focus:ring-indigo-500 shadow-sm">
+                                <option value="">Seleccione un distrito</option>
+                                @foreach ($distritos as $distrito)
+                                    <option value="{{ $distrito->id }}" data-provincia="{{ $distrito->provincia_id }}">{{ $distrito->nombre }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div>
+                            <x-forms.input-label for="edit-telefono" value="Numero Telefonico" />
+                            <x-forms.text-input id="edit-telefono" type="tel" class="w-full mt-1" />
+                        </div>
+                    </div>
+
                     <div class="flex flex-col md:flex-row gap-6 mb-6">
                         <div class="flex-1">
                             <x-forms.input-label for="edit-correo-pers" value="Correo Personal" />

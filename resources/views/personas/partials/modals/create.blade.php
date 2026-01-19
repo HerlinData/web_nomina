@@ -17,7 +17,7 @@
 
             <!-- Body -->
             <div class="p-8">
-                <form action="{{ route('personas.store') }}" method="POST">
+                <form id="create-form" action="{{ route('personas.store') }}" method="POST">
                     @csrf
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -94,13 +94,24 @@
                             </select>
                         </div>
 
+                        <!-- Provincia -->
+                        <div>
+                            <x-forms.input-label for="new-provincia" value="Provincia" />
+                            <select id="new-provincia" name="provincia" class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm w-full mt-1">
+                                <option value="">Seleccione una provincia</option>
+                                @foreach ($provincias as $provincia)
+                                    <option value="{{ $provincia->id }}" data-departamento="{{ $provincia->departamento_id }}">{{ $provincia->nombre }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
                         <!-- Distrito -->
                         <div>
                             <x-forms.input-label for="new-distrito" value="Distrito" />
                             <select id="new-distrito" name="distrito" class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm w-full mt-1">
                                 <option value="">Seleccione un distrito</option>
                                 @foreach ($distritos as $distrito)
-                                    <option value="{{ $distrito->id }}" data-departamento="{{ $distrito->departamento_id }}">{{ $distrito->nombre }}</option>
+                                    <option value="{{ $distrito->id }}" data-provincia="{{ $distrito->provincia_id }}">{{ $distrito->nombre }}</option>
                                 @endforeach
                             </select>
                         </div>

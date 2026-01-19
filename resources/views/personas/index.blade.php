@@ -42,8 +42,7 @@
                 <tr>
                     <th class="px-6 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider text-left">Colaborador</th>
                     <th class="px-6 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">F. Nac.</th>
-                    <th class="px-6 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">País</th>
-                    <th class="px-6 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Telefono</th>
+                    <th class="px-6 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Nacionalidad</th>
                     <th class="px-6 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Correo personal</th>
                     <th class="px-6 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Estado</th>
                     <th class="px-6 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider text-center">Acciones</th>
@@ -55,13 +54,10 @@
                     $fechaNac = $persona->fecha_nacimiento ? \Carbon\Carbon::parse($persona->fecha_nacimiento)->format('d/m/Y') : '-';
                     $fechaNacIso = $persona->fecha_nacimiento ? \Carbon\Carbon::parse($persona->fecha_nacimiento)->format('Y-m-d') : '';
                     $estado = $persona->estado;
-                    $badgeClass = ($estado == 1) ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' :
-                                 (($estado == 2) ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400' :
+                    $badgeClass = ($estado == 1) ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : 
+                                 (($estado == 2) ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400' : 
                                  'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400');
                     $estadoTexto = ($estado == 1) ? 'Activo' : (($estado == 2) ? 'Pendiente' : 'Inactivo');
-
-                    // Verificar si es mes de cumpleaños
-                    $esCumpleMes = $persona->fecha_nacimiento && \Carbon\Carbon::parse($persona->fecha_nacimiento)->month === now()->month;
                 @endphp
                 <tr class="group transition-all duration-300 transform hover:scale-[1.01] hover:shadow-xl hover:z-10"
                     data-id="{{ $persona->id_persona }}"
@@ -72,8 +68,10 @@
                     data-materno="{{ $persona->apellido_materno }}"
                     data-nac="{{ $fechaNacIso }}"
                     data-genero="{{ $persona->genero }}"
+                    data-nacionalidad="{{ $persona->nacionalidad }}"
                     data-pais="{{ $persona->pais }}"
                     data-departamento="{{ $persona->departamento }}"
+                    data-provincia="{{ $persona->provincia }}"
                     data-distrito="{{ $persona->distrito }}"
                     data-telefono="{{ $persona->numero_telefonico }}"
                     data-correo-pers="{{ $persona->correo_electronico_personal }}"
@@ -83,15 +81,9 @@
                     <!-- Columna Colaborador (Izquierda) -->
                     <td class="bg-white dark:bg-[#273142] px-6 py-2.5 text-left rounded-l-xl border-y border-l border-light-border dark:border-dark-border group-hover:bg-gray-50 dark:group-hover:bg-[#323d4d] transition-all duration-300 shadow-sm">
                         <div class="flex items-center gap-3">
-                            @if($esCumpleMes)
-                            <div class="h-9 w-9 rounded-full bg-gradient-to-br from-pink-500 to-orange-400 flex items-center justify-center text-white shadow-md" title="¡Cumpleaños este mes!">
-                                <i class="fa-solid fa-cake-candles text-lg"></i>
-                            </div>
-                            @else
                             <div class="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center text-primary text-sm font-bold">
                                 {{ substr($persona->nombres ?? '?', 0, 1) }}{{ substr($persona->apellido_paterno ?? '?', 0, 1) }}
                             </div>
-                            @endif
                             <div class="flex flex-col">
                                 <span class="text-sm font-bold text-gray-800 dark:text-white leading-tight">
                                     {{ $persona->apellido_paterno ?? '' }} {{ $persona->apellido_materno ?? '' }} {{ $persona->nombres ?? 'Sin Asignar' }}
@@ -103,8 +95,7 @@
                         </div>
                     </td>
                     <td class="bg-white dark:bg-[#273142] px-6 py-2.5 text-sm text-gray-500 dark:text-[#ffffff] border-y border-light-border dark:border-dark-border group-hover:bg-gray-50 dark:group-hover:bg-[#323d4d] transition-all duration-300 shadow-sm">{{ $fechaNac }}</td>
-                    <td class="bg-white dark:bg-[#273142] px-6 py-2.5 text-sm text-gray-500 dark:text-[#ffffff] border-y border-light-border dark:border-dark-border group-hover:bg-gray-50 dark:group-hover:bg-[#323d4d] transition-all duration-300 shadow-sm truncate">{{ $persona->pais }}</td>
-                    <td class="bg-white dark:bg-[#273142] px-6 py-2.5 text-sm text-gray-500 dark:text-[#ffffff] border-y border-light-border dark:border-dark-border group-hover:bg-gray-50 dark:group-hover:bg-[#323d4d] transition-all duration-300 shadow-sm truncate">{{ $persona->numero_telefonico }}</td>
+                    <td class="bg-white dark:bg-[#273142] px-6 py-2.5 text-sm text-gray-500 dark:text-[#ffffff] border-y border-light-border dark:border-dark-border group-hover:bg-gray-50 dark:group-hover:bg-[#323d4d] transition-all duration-300 shadow-sm truncate">{{ $persona->nacionalidad }}</td>
                     <td class="bg-white dark:bg-[#273142] px-6 py-2.5 text-sm text-gray-500 dark:text-[#ffffff] border-y border-light-border dark:border-dark-border group-hover:bg-gray-50 dark:group-hover:bg-[#323d4d] transition-all duration-300 shadow-sm truncate">{{ $persona->correo_electronico_personal }}</td>
                     <td class="bg-white dark:bg-[#273142] px-6 py-2.5 border-y border-light-border dark:border-dark-border group-hover:bg-gray-50 dark:group-hover:bg-[#323d4d] transition-all duration-300 shadow-sm">
                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $badgeClass }} ">

@@ -85,7 +85,7 @@
                                 <span class="text-sm font-bold text-gray-800 dark:text-white leading-tight">
                                     {{ $contrato->persona->apellido_paterno ?? '' }} {{ $contrato->persona->nombres ?? 'Sin Asignar' }}
                                 </span>
-                                <span class="text-[12px] text-gray-500 font-bold mt-0.5">
+                                <span class="text-[14px] text-gray-500 font-bold mt-0.5">
                                     {{ $contrato->persona->tipo_documento ?? 'DOC' }}: {{ $contrato->persona->numero_documento ?? '---' }}
                                 </span>
                             </div>

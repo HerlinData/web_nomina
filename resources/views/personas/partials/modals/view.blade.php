@@ -9,10 +9,9 @@
                     <button onclick="closeModal('view-modal')" class="text-gray-400 hover:text-gray-600 transition-colors"><i class="fa-solid fa-times text-2xl"></i></button>
                 </div>
                 <form id="view-form">
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                         <div><label class="block text-sm font-semibold text-gray-500 mb-2">Tipo Doc.</label><input type="text" id="view-tdoc" readonly class="w-full bg-gray-50 dark:bg-gray-700 dark:text-gray-300 border-transparent rounded-lg py-2.5 px-4 cursor-default"></div>
                         <div><label class="block text-sm font-semibold text-gray-500 mb-2">N° Documento</label><input type="text" id="view-doc" readonly class="w-full bg-gray-50 dark:bg-gray-700 dark:text-gray-300 border-transparent rounded-lg py-2.5 px-4 cursor-default"></div>
-                        <div><label class="block text-sm font-semibold text-gray-500 mb-2">Nacionalidad</label><input type="text" id="view-nacionalidad" readonly class="w-full bg-gray-50 dark:bg-gray-700 dark:text-gray-300 border-transparent rounded-lg py-2.5 px-4 cursor-default"></div>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                         <div><label class="block text-sm font-semibold text-gray-500 mb-2">Ap. Paterno</label><input type="text" id="view-paterno" readonly class="w-full bg-gray-50 dark:bg-gray-700 dark:text-gray-300 border-transparent rounded-lg py-2.5 px-4 cursor-default"></div>
@@ -22,6 +21,50 @@
                     <div class="flex flex-col md:flex-row gap-6 mb-6">
                         <div class="flex-1"><label class="block text-sm font-semibold text-gray-500 mb-2">Fecha Nacimiento</label><input type="text" id="view-nac" readonly class="w-full bg-gray-50 dark:bg-gray-700 dark:text-gray-300 border-transparent rounded-lg py-2.5 px-4 cursor-default"></div>
                         <div class="flex-1"><label class="block text-sm font-semibold text-gray-500 mb-2">Género</label><input type="text" id="view-genero" readonly class="w-full bg-gray-50 dark:bg-gray-700 dark:text-gray-300 border-transparent rounded-lg py-2.5 px-4 cursor-default"></div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-500 mb-2">Pais</label>
+                            <select id="view-pais" disabled class="w-full bg-gray-50 dark:bg-gray-700 dark:text-gray-300 border-transparent rounded-lg py-2.5 px-4 cursor-default">
+                                <option value="">Seleccione un pais</option>
+                                @foreach ($paises as $pais)
+                                    <option value="{{ $pais->id }}">{{ $pais->nombre }} ({{ $pais->codigo_pais }})</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-500 mb-2">Departamento</label>
+                            <select id="view-departamento" disabled class="w-full bg-gray-50 dark:bg-gray-700 dark:text-gray-300 border-transparent rounded-lg py-2.5 px-4 cursor-default">
+                                <option value="">Seleccione un departamento</option>
+                                @foreach ($departamentos as $departamento)
+                                    <option value="{{ $departamento->id }}" data-pais="{{ $departamento->pais_id }}">{{ $departamento->nombre }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-500 mb-2">Provincia</label>
+                            <select id="view-provincia" disabled class="w-full bg-gray-50 dark:bg-gray-700 dark:text-gray-300 border-transparent rounded-lg py-2.5 px-4 cursor-default">
+                                <option value="">Seleccione una provincia</option>
+                                @foreach ($provincias as $provincia)
+                                    <option value="{{ $provincia->id }}" data-departamento="{{ $provincia->departamento_id }}">{{ $provincia->nombre }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-500 mb-2">Distrito</label>
+                            <select id="view-distrito" disabled class="w-full bg-gray-50 dark:bg-gray-700 dark:text-gray-300 border-transparent rounded-lg py-2.5 px-4 cursor-default">
+                                <option value="">Seleccione un distrito</option>
+                                @foreach ($distritos as $distrito)
+                                    <option value="{{ $distrito->id }}" data-provincia="{{ $distrito->provincia_id }}">{{ $distrito->nombre }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-500 mb-2">Numero Telefonico</label>
+                            <input type="text" id="view-telefono" readonly class="w-full bg-gray-50 dark:bg-gray-700 dark:text-gray-300 border-transparent rounded-lg py-2.5 px-4 cursor-default">
+                        </div>
                     </div>
                     <div class="flex flex-col md:flex-row gap-6 mb-6">
                         <div class="flex-1"><label class="block text-sm font-semibold text-gray-500 mb-2">Correo Personal</label><input type="text" id="view-correo-pers" readonly class="w-full bg-gray-50 dark:bg-gray-700 dark:text-gray-300 border-transparent rounded-lg py-2.5 px-4 cursor-default"></div>
